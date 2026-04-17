@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "survival_analysis_cmapss"
+version = "0.1.0"
+description = "Survival Analysis for Turbofan Engines. Baseline implementation of RUL prediction using the NASA C-MAPSS dataset. This project leverages XGBoost for non-linear degradation modeling and includes a full-stack deployment for sensor-data tracking."
+requires-python = ">=3.9"
+
+# requirements.txt
+dependencies = [
+    "numpy",
+    "pandas",
+    
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["utils*"]
