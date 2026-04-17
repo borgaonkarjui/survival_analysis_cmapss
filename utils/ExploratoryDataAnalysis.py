@@ -116,3 +116,26 @@ def plot_engine_step_regimes(df, unit_id=1):
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.show()
 
+#identifying global flat sensors
+def identify_global_flat_sensors(df):
+    """
+    Calculates and prints the standard deviation for all sensors,
+    identifying which are globally flat.
+    """
+    # Identify sensor columns
+    sensor_cols = [col for col in df.columns if col not in ['unit_id', 'cycle', 'altitude', 'mach_number', 'tra', 'op_regime']]
+    
+    # Calculate standard deviation
+    std_series = df[sensor_cols].std().sort_values()
+    
+    print("--- Sensor Variance Profile (Sorted) ---")
+    for name, std in std_series.items():
+        status = "[FLAT]" if std == 0 else ""
+        print(f"{name:10} | StdDev: {std:12.6f} {status}")
+        
+    flat_sensors = std_series[std_series == 0].index.tolist()
+    
+    print("-" * 40)
+    print(f"Total Flat Sensors Found: {len(flat_sensors)}")
+    
+    return flat_sensors
