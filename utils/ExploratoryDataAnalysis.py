@@ -29,10 +29,25 @@ def analyze_engines(df, setType="Train"):
     
     return engine_stats
 
-#plot operating regime clusters
-import pandas as pd
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+#plot engine lifecycle length
+def plot_max_cycle_dist(df):
+    # Get the last cycle for each engine
+    max_cycles = df.groupby('unit_id')['cycle'].max()
+    
+    plt.figure(figsize=(10, 6))
+    sns.histplot(max_cycles, bins=30, kde=True, color='teal')
+    
+    plt.title('Distribution of Engine Lifespans (Max Cycles) - FD004 Training Set')
+    plt.xlabel('Total Cycles until Failure')
+    plt.ylabel('Number of Engines')
+    plt.grid(axis='y', alpha=0.3)
+    
+    # Add vertical lines for mean and median
+    plt.axvline(max_cycles.mean(), color='red', linestyle='--', label=f'Mean: {max_cycles.mean():.1f}')
+    plt.axvline(max_cycles.median(), color='yellow', linestyle='-', label=f'Median: {max_cycles.median():.1f}')
+    
+    plt.legend()
+    plt.show()
 
 #Operating condition/regime analysis
 def analyze_regime_clusters(df):
@@ -100,3 +115,4 @@ def plot_engine_step_regimes(df, unit_id=1):
     plt.ylabel('Operating Regime ID')
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.show()
+
