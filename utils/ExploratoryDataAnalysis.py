@@ -139,3 +139,26 @@ def identify_global_flat_sensors(df):
     print(f"Total Flat Sensors Found: {len(flat_sensors)}")
     
     return flat_sensors
+
+#plot single sensor for an engine
+def visualize_degradation_start(df, unit_id=1, sensor='T50'):
+    """
+    Plots a normalized sensor over time to help identify the 'knee' 
+    where degradation starts.
+    """
+    # Filter for one engine
+    engine_data = df[df['unit_id'] == unit_id]
+    
+    plt.figure(figsize=(12, 5))
+    plt.plot(engine_data['cycle'], engine_data[sensor], alpha=0.5, label=sensor)
+    
+    # Add a rolling mean to see the trend through the noise
+    plt.plot(engine_data['cycle'], engine_data[sensor].rolling(window=10).mean(), 
+             color='red', linewidth=2, label='10-Cycle Rolling Mean')
+    
+    plt.title(f'Degradation Trend for {sensor} (Engine #{unit_id})')
+    plt.xlabel('Cycle')
+    plt.ylabel('Normalized Value')
+    plt.axhline(0, color='black', linestyle='--', alpha=0.3)
+    plt.legend()
+    plt.show()
