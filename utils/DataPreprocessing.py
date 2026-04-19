@@ -23,6 +23,35 @@ def identify_operating_regimes(df):
     print(f"Identified {df_regime['op_regime'].nunique()} unique operating regimes.")
     return df_regime
 
+#regime wise mean and std dev calculation
+def save_regime_stats(df, output_path='regime_stats.csv'):
+    """
+    Calculates mean and std for each sensor per regime and saves to CSV.
+    The CSV will have columns: op_regime, sensor_name, mean, std
+    """
+    stats_list = []
+
+    #identify sensor cols
+    sensor_cols = fetch_sensor_cols(df)
+    
+    for regime in sorted(df['op_regime'].unique()):
+        regime_data = df[df['op_regime'] == regime]
+        
+        for sensor in sensor_cols:
+            m = regime_data[sensor].mean()
+            s = regime_data[sensor].std()
+            stats_list.append({
+                'op_regime': regime,
+                'sensor': sensor,
+                'mean': m,
+                'std': s if s > 0 else 1.0  # Avoid division by zero
+            })
+            
+    stats_df = pd.DataFrame(stats_list)
+    stats_df.to_csv(output_path, index=False)
+    print(f"Regime statistics saved to {output_path}")
+    return stats_df
+
 #normalize data considering mean and std. dev. per operating regime
 def normalize_by_regime(df, stats_path='regime_stats.csv'):
     """
@@ -54,35 +83,6 @@ def normalize_by_regime(df, stats_path='regime_stats.csv'):
                     
     print(f"Normalization complete using stats from {stats_path}")
     return df_norm
-
-#regime wise mean and std dev calculation
-def save_regime_stats(df, output_path='regime_stats.csv'):
-    """
-    Calculates mean and std for each sensor per regime and saves to CSV.
-    The CSV will have columns: op_regime, sensor_name, mean, std
-    """
-    stats_list = []
-
-    #identify sensor cols
-    sensor_cols = fetch_sensor_cols(df)
-    
-    for regime in sorted(df['op_regime'].unique()):
-        regime_data = df[df['op_regime'] == regime]
-        
-        for sensor in sensor_cols:
-            m = regime_data[sensor].mean()
-            s = regime_data[sensor].std()
-            stats_list.append({
-                'op_regime': regime,
-                'sensor': sensor,
-                'mean': m,
-                'std': s if s > 0 else 1.0  # Avoid division by zero
-            })
-            
-    stats_df = pd.DataFrame(stats_list)
-    stats_df.to_csv(output_path, index=False)
-    print(f"Regime statistics saved to {output_path}")
-    return stats_df
 
 #RUL claculation for test set
 def add_remaining_useful_life(df, cap=125):
