@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from utils.ExploratoryDataAnalysis import fetch_sensor_cols
 
 #round off the 3 regime settings and group in 6 operating conditions conditions
 def identify_operating_regimes(df):
@@ -21,11 +22,6 @@ def identify_operating_regimes(df):
     
     print(f"Identified {df_regime['op_regime'].nunique()} unique operating regimes.")
     return df_regime
-
-#identify sensor columns
-def fetch_sensor_cols(df):
-    sensor_cols = [col for col in df.columns if col not in ['unit_id', 'cycle', 'altitude', 'mach_number', 'tra', 'op_regime']]
-    return sensor_cols
 
 #normalize data considering mean and std. dev. per operating regime
 def normalize_by_regime(df, stats_path='regime_stats.csv'):

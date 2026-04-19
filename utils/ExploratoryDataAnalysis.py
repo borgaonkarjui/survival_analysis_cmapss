@@ -3,6 +3,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 
+#identify sensor columns
+def fetch_sensor_cols(df):
+    sensor_cols = [col for col in df.columns if col not in ['unit_id', 'cycle', 'altitude', 'mach_number', 'tra', 'op_regime']]
+    return sensor_cols
+
 #analyze engine cycle stats
 def analyze_engines(df, setType="Train"):
     """
@@ -123,7 +128,7 @@ def identify_global_flat_sensors(df):
     identifying which are globally flat.
     """
     # Identify sensor columns
-    sensor_cols = [col for col in df.columns if col not in ['unit_id', 'cycle', 'altitude', 'mach_number', 'tra', 'op_regime']]
+    sensor_cols = fetch_sensor_cols(df)
     
     # Calculate standard deviation
     std_series = df[sensor_cols].std().sort_values()
@@ -161,4 +166,35 @@ def visualize_degradation_start(df, unit_id=1, sensor='T50'):
     plt.ylabel('Normalized Value')
     plt.axhline(0, color='black', linestyle='--', alpha=0.3)
     plt.legend()
+    plt.show()
+
+#plot multiple sensors for an multiple engines
+def plot_multi_sensor_fleet(df, sensors=['T50', 'Ps30', 'BPR', 'htBleed'], num_engines=10):
+    """
+    Plots fleet-wide trends for multiple sensors to find a common degradation point.
+    """
+    fig, axes = plt.subplots(len(sensors), 1, figsize=(15, 4 * len(sensors)))
+    unique_units = df['unit_id'].unique()[:num_engines]
+
+    for i, sensor in enumerate(sensors):
+        for unit in unique_units:
+            engine_data = df[df['unit_id'] == unit].copy()
+            
+            # Align by end-of-life
+            max_c = engine_data['cycle'].max()
+            engine_data['cycles_to_fail'] = engine_data['cycle'] - max_c
+            
+            # Focus on the last 250 cycles
+            tail_data = engine_data[engine_data['cycles_to_fail'] > -250]
+            
+            axes[i].plot(tail_data['cycles_to_fail'], 
+                         tail_data[sensor].rolling(window=10).mean(), 
+                         alpha=0.5)
+        
+        axes[i].set_title(f'Fleet Trends: {sensor}')
+        axes[i].axvline(-125, color='red', linestyle='--', label='Standard Cap (125)')
+        axes[i].set_ylabel('Normalized Value')
+        axes[i].grid(True, alpha=0.3)
+
+    plt.tight_layout()
     plt.show()
