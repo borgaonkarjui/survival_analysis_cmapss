@@ -35,11 +35,11 @@ def normalize_by_regime(df, stats_path='regime_stats.csv'):
     sensor_cols = stats_df['sensor'].unique().tolist()
     df_norm[sensor_cols] = df_norm[sensor_cols].astype('float64')
     
-    # Iterate through each regime and sensor present in the stats file
+    #iterate through each regime and sensor present in the stats file
     for regime in stats_df['op_regime'].unique():
         regime_mask = df_norm['op_regime'] == regime
         
-        # Only process if this regime exists in the current dataframe
+        #if regime exists in the current dataframe
         if regime_mask.any():
             regime_stats = stats_df[stats_df['op_regime'] == regime]
             
@@ -48,14 +48,14 @@ def normalize_by_regime(df, stats_path='regime_stats.csv'):
                 m = row['mean']
                 s = row['std']
                 
-                # Apply normalization: (x - mean) / std
+                #normalization: (x - mean) / std
                 if sensor in df_norm.columns:
                     df_norm.loc[regime_mask, sensor] = (df_norm.loc[regime_mask, sensor] - m) / s
                     
     print(f"Normalization complete using stats from {stats_path}")
     return df_norm
 
-#regime wise 
+#regime wise mean and std dev calculation
 def save_regime_stats(df, output_path='regime_stats.csv'):
     """
     Calculates mean and std for each sensor per regime and saves to CSV.
@@ -83,3 +83,21 @@ def save_regime_stats(df, output_path='regime_stats.csv'):
     stats_df.to_csv(output_path, index=False)
     print(f"Regime statistics saved to {output_path}")
     return stats_df
+
+#RUL claculation for test set
+def add_remaining_useful_life(df, cap=125):
+    """
+    Calculates Piecewise Linear RUL for the training set.
+    """
+    #find the maximum cycle for each engine
+    max_cycle = df.groupby('unit_id')['cycle'].transform('max')
+    
+    #true rul 0 -> n cycles
+    #to use for plots
+    df['true_rul'] = max_cycle - df['cycle']
+    
+    #Piecewise Cap of 125 : target rul - > 0-125 : healthy state clipped to 125 degradation trend preserved for unhealthy state n cycles
+    #to use for training
+    df['target_rul'] = df['true_rul'].clip(upper=cap)
+    
+    return df
