@@ -22,23 +22,68 @@ def identify_operating_regimes(df):
     print(f"Identified {df_regime['op_regime'].nunique()} unique operating regimes.")
     return df_regime
 
+#identify sensor columns
+def fetch_sensor_cols(df):
+    sensor_cols = [col for col in df.columns if col not in ['unit_id', 'cycle', 'altitude', 'mach_number', 'tra', 'op_regime']]
+    return sensor_cols
+
 #normalize data considering mean and std. dev. per operating regime
-def normalize_by_regime(df):
+def normalize_by_regime(df, stats_path='regime_stats.csv'):
     """
-    Standardizes sensors based on their specific operating regime.
-    Formula: z = (x - mean_regime) / std_regime
+    Normalizes a dataframe using pre-calculated statistics from a CSV.
     """
     df_norm = df.copy()
+    stats_df = pd.read_csv(stats_path)
+
+    #converting all sensor cols to float
+    sensor_cols = stats_df['sensor'].unique().tolist()
+    df_norm[sensor_cols] = df_norm[sensor_cols].astype('float64')
+    
+    # Iterate through each regime and sensor present in the stats file
+    for regime in stats_df['op_regime'].unique():
+        regime_mask = df_norm['op_regime'] == regime
+        
+        # Only process if this regime exists in the current dataframe
+        if regime_mask.any():
+            regime_stats = stats_df[stats_df['op_regime'] == regime]
+            
+            for _, row in regime_stats.iterrows():
+                sensor = row['sensor']
+                m = row['mean']
+                s = row['std']
+                
+                # Apply normalization: (x - mean) / std
+                if sensor in df_norm.columns:
+                    df_norm.loc[regime_mask, sensor] = (df_norm.loc[regime_mask, sensor] - m) / s
+                    
+    print(f"Normalization complete using stats from {stats_path}")
+    return df_norm
+
+#regime wise 
+def save_regime_stats(df, output_path='regime_stats.csv'):
+    """
+    Calculates mean and std for each sensor per regime and saves to CSV.
+    The CSV will have columns: op_regime, sensor_name, mean, std
+    """
+    stats_list = []
 
     #identify sensor cols
-    sensor_cols = [col for col in df.columns if col not in ['unit_id', 'cycle', 'altitude', 'mach_number', 'tra', 'op_regime']]
+    sensor_cols = fetch_sensor_cols(df)
     
-    # Group by the 'op_regime' and transform each sensor column
-    for sensor in sensor_cols:
-        # Calculate mean and std for each regime
-        df_norm[sensor] = df_norm.groupby('op_regime')[sensor].transform(
-            lambda x: (x - x.mean()) / x.std() if x.std() > 0 else 0
-        )
+    for regime in sorted(df['op_regime'].unique()):
+        regime_data = df[df['op_regime'] == regime]
         
-    print(f"Normalization complete for {len(sensor_cols)} sensors.")
-    return df_norm
+        for sensor in sensor_cols:
+            m = regime_data[sensor].mean()
+            s = regime_data[sensor].std()
+            stats_list.append({
+                'op_regime': regime,
+                'sensor': sensor,
+                'mean': m,
+                'std': s if s > 0 else 1.0  # Avoid division by zero
+            })
+            
+    stats_df = pd.DataFrame(stats_list)
+    stats_df.to_csv(output_path, index=False)
+    print(f"Regime statistics saved to {output_path}")
+    return stats_df
