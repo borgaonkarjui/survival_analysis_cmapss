@@ -1,11 +1,12 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 
 #identify sensor columns
 def fetch_sensor_cols(df):
-    sensor_cols = [col for col in df.columns if col not in ['unit_id', 'cycle', 'altitude', 'mach_number', 'tra', 'op_regime']]
+    sensor_cols = [col for col in df.columns if col not in ['unit_id', 'cycle', 'altitude', 'mach_number', 'tra', 'op_regime', 'target_rul', 'true_rul']]
     return sensor_cols
 
 #analyze engine cycle stats
@@ -198,3 +199,54 @@ def plot_multi_sensor_fleet(df, sensors=['T50', 'Ps30', 'BPR', 'htBleed'], num_e
 
     plt.tight_layout()
     plt.show()
+
+
+def plot_correlation_with_target(df, redundancy_thresh=0.9, corr_thresh=0.1):
+    """
+    1. Plots a sensor correlation heatmap with Target RUL.
+    2. Identifies sensors directly tracking degradation.
+    3. Flags redundant sensor pairs (High Inter-Correlation).
+    """
+    #define sensor and target cols : ignoring true_rul, engine id and operating consition cols
+    sensor_cols = fetch_sensor_cols(df)
+    cols_to_corr = sensor_cols + ['target_rul']
+    
+    plt.figure(figsize=(12, 10))
+    correlation_matrix = df[cols_to_corr].corr()
+    
+    sns.heatmap(correlation_matrix, annot=False, cmap='RdBu_r', center=0)
+    plt.title('Feature Correlation Heatmap (Sensors & Target RUL)')
+    plt.show()
+    
+    #sensor correlations with 'target_rul'
+    target_corr = correlation_matrix['target_rul']
+    print("--- Sensor Correlation with Target RUL ---")
+    # print(target_corr)
+    # print("Sensors with low correlation")
+    for sensor, corr_val in target_corr.items():
+        if abs(corr_val) < corr_thresh:
+            flag = "--> low correlation"
+        else:
+            flag = " "
+        print(f"{sensor} : {corr_val} {flag}")
+        flag = " "
+        
+
+    #redundant sensor pairs
+    print(f"\n--- Redundant Sensor Pairs (Absolute Correlation > {redundancy_thresh}) ---")
+    #absolute values to capture perfect inverse corr
+    corr_abs = correlation_matrix.loc[sensor_cols, sensor_cols].abs()
+    #scan upped triangle of matrix to avoid redundancy
+    upper_tri = corr_abs.where(np.triu(np.ones(corr_abs.shape), k=1).astype(bool)) #k=1 to remove self-corr on the main diagonal
+    
+    redundant_found = False
+    for col in upper_tri.columns:
+        for row in upper_tri.index:
+            correlation_value = upper_tri.loc[row, col]
+            if correlation_value > redundancy_thresh:
+                actual_corr = correlation_matrix.loc[row, col]
+                print(f"{row:8} <-> {col:8} | Corr Coeff: {actual_corr:.4f}")
+                redundant_found = True
+                
+    if not redundant_found:
+        print("No redundant sensor pairs found at this threshold.")
