@@ -59,14 +59,14 @@ def preprocess_data(file_path, stats_path,
 
         #save files
         if train_save_path and val_save_path:
-            train_set.to_csv(train_save_path)
+            train_set.to_csv(train_save_path, index=False)
             print(f"Train set successfully saved at {train_save_path}!")
-            val_set.to_csv(val_save_path)
+            val_set.to_csv(val_save_path, index=False)
             print(f"Validation set successfully saved at {val_save_path}!")
 
         return train_set, val_set
     else:
         if test_save_path:
-            df[final_cols].to_csv(test_save_path)
+            df[final_cols].to_csv(test_save_path, index=False)
             print(f"Test set successfully saved at {test_save_path}!")
         return df[final_cols]
