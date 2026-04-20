@@ -23,19 +23,6 @@ def xgboost_train_loader(train_path, val_path,
     
     return X_train, y_train, X_val, y_val
 
-def prepare_test_data(test_df, selected_sensors):
-    """
-    Extracts the last available cycle for each engine in the test set.
-    """
-    # Get the last row for each unit_id
-    test_last_cycles = test_df.groupby('unit_id').last().reset_index()
-    
-    # Separate features (X_test)
-    features = ['op_regime'] + selected_sensors
-    X_test = test_last_cycles[features]
-    
-    return X_test, test_last_cycles['unit_id']
-
 def xgboost_test_loader(test_path, rul_path,
                         selected_sensors=['T24', 'T30', 'T50', 'P30', 'Nf', 'Nc', 'epr', 'Ps30', 'NRf', 'NRc', 'htBleed'],
                         is_snapshot=True,
