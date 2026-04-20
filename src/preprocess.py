@@ -26,7 +26,7 @@ def split_data_by_engine(df, test_size=0.2, random_state=42):
     return train_set, val_set
 
 def preprocess_data(file_path, stats_path, 
-                    train_save_path=None, val_save_path=None, 
+                    train_save_path=None, val_save_path=None, test_save_path=None,
                     selected_sensors=['T24', 'T30', 'T50', 'P30', 'Nf', 'Nc', 'epr', 'Ps30', 'NRf', 'NRc', 'htBleed'],
                     test_size=0.2, random_state=42, 
                     is_train=True, rul_cap=125):
@@ -42,25 +42,28 @@ def preprocess_data(file_path, stats_path,
     #normalization using regime wise saved stats
     df = normalize_by_regime(df, stats_path)
 
-    #RUL calculation for train set
-    if is_train:
-        df = add_remaining_useful_life(df, cap=rul_cap)
-
     #feature selection
-    # We keep unit_id and cycle for tracking/plotting, and op_regime for context
+    #keeping unit_id and cycle for tracking/plotting, and op_regime for context
     final_cols = ['unit_id', 'cycle', 'op_regime'] + selected_sensors
     if is_train:
+        #RUL calculation for train set
+        df = add_remaining_useful_life(df, cap=rul_cap)
+
         final_cols.append('target_rul')
     
-    #train and val split
-    train_set, val_set = split_data_by_engine(df[final_cols], test_size=test_size, random_state=random_state)
-    
-    train_set = train_set.reset_index(drop=True)
-    val_set = val_set.reset_index(drop=True)
+        #train and val split
+        train_set, val_set = split_data_by_engine(df[final_cols], test_size=test_size, random_state=random_state)
+        
+        train_set = train_set.reset_index(drop=True)
+        val_set = val_set.reset_index(drop=True)
 
-    #save files
-    if train_save_path and val_save_path:
-        train_set.to_csv(train_save_path)
-        val_set.to_csv(val_save_path)
+        #save files
+        if train_save_path and val_save_path:
+            train_set.to_csv(train_save_path)
+            val_set.to_csv(val_save_path)
 
-    return train_set, val_set
+        return train_set, val_set
+    else:
+        if test_save_path:
+            df[final_cols].to_csv(test_save_path)
+        return df[final_cols]
