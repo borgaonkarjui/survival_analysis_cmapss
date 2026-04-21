@@ -1,10 +1,12 @@
 from model_defination import get_model
 from data_loader import xgboost_train_loader
+from utils.version_control import get_next_version
 from sklearn.model_selection import RandomizedSearchCV
+from pathlib import Path
 
-def run_training_pipeline(train_path, val_path, target_col='target_rul', model_type="xgboost", params=None, tune=False, param_grid=None, random_state=42, n_iter=None, cv=None):
+def run_training_pipeline(train_path, val_path, target_col='target_rul', model_type="xgboost", params=None, tune=False, param_grid=None, random_state=42, n_iter=None, cv=None, save_dir="../models"):
     """
-    Runs model training pipeline.
+    Runs model training pipeline and saves final model in json format.
     """
     valid_model_types = ['xgboost']
     match model_type:
@@ -14,6 +16,12 @@ def run_training_pipeline(train_path, val_path, target_col='target_rul', model_t
             X_train, y_train, X_val, y_val = xgboost_train_loader(
                 train_path=train_path, val_path=val_path, target_col=target_col
                 )
+            #model save path config
+            save_path = Path(save_dir)
+            save_path.mkdir(parents=True, exist_ok=True)
+            file_name = get_next_version(save_dir, model_type, "json")
+            model_path = f"{save_dir}/{file_name}"
+
             #training
             if not tune:
                 print("Training XGBoost baseline model...")
@@ -86,4 +94,7 @@ def run_training_pipeline(train_path, val_path, target_col='target_rul', model_t
         case _:
             return KeyError(f"Unsupported model type! Use one of the following: {valid_model_types}")
         
+    #save and return model
+    model.save_model(model_path)
+    print(f"Model saved at {model_path}")
     return model, model_params
