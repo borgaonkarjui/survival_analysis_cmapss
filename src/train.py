@@ -3,8 +3,10 @@ from data_loader import xgboost_train_loader
 from utils.version_control import get_next_version
 from sklearn.model_selection import RandomizedSearchCV
 from pathlib import Path
+import json
+import os
 
-def run_training_pipeline(train_path, val_path, target_col='target_rul', model_type="xgboost", params=None, tune=False, param_grid=None, random_state=42, n_iter=None, cv=None, save_dir="../models"):
+def run_training_pipeline(train_path, val_path, target_col='target_rul', model_type="xgboost", params=None, tune=False, param_grid=None, random_state=42, n_iter=None, cv=None, save_dir="../models", logs_dir="../logs"):
     """
     Runs model training pipeline and saves final model in json format.
     """
@@ -20,7 +22,8 @@ def run_training_pipeline(train_path, val_path, target_col='target_rul', model_t
             save_path = Path(save_dir)
             save_path.mkdir(parents=True, exist_ok=True)
             file_name = get_next_version(save_dir, model_type, "json")
-            model_path = f"{save_dir}/{file_name}"
+            model_path = Path(f"{save_dir}/{file_name}")
+            logs_path = Path(f"{logs_dir}/{model_path.stem}.json")
 
             #training
             if not tune:
@@ -94,7 +97,19 @@ def run_training_pipeline(train_path, val_path, target_col='target_rul', model_t
         case _:
             return KeyError(f"Unsupported model type! Use one of the following: {valid_model_types}")
         
-    #save and return model
+    #save model and history
+    if save_dir and not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+        print(f"Created directory: {save_dir}")
     model.save_model(model_path)
     print(f"Model saved at {model_path}")
+
+    history = model.evals_result()
+    if logs_dir and not os.path.exists(logs_dir):
+        os.makedirs(logs_dir)
+        print(f"Created directory: {logs_dir}")
+    with open(logs_path, "w") as f:
+        json.dump(history, f)
+        print(f"Training logs successfully saved to {logs_path}")
+
     return model, model_params
