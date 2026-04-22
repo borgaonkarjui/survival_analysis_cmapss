@@ -1,11 +1,12 @@
 import pandas as pd
 import numpy as np
+import os
 from utils.ExploratoryDataAnalysis import fetch_sensor_cols
 
 #round off the 3 regime settings and group in 6 operating conditions conditions
-def identify_operating_regimes(df):
+def identify_operating_regimes(df, map_save_path=None):
     """
-    Groups the 3 settings into 6 discrete operating regimes.
+    Learns regimes from training data and saves the map.
     """
     df_regime = df.copy()
     
@@ -14,14 +15,26 @@ def identify_operating_regimes(df):
     df_regime['mach_bin'] = df_regime['mach_number'].round(1)
     df_regime['tra_bin'] = df_regime['tra'].round()
     
+    # Discover unique combinations and assign IDs
+    # drop_duplicates to get the unique 'Rules'
+    regime_map = df_regime[['alt_bin', 'mach_bin', 'tra_bin']].drop_duplicates().reset_index(drop=True)
+    regime_map['op_regime'] = regime_map.index
+
+    # Save regime map
+    if map_save_path:
+        os.makedirs(os.path.dirname(map_save_path), exist_ok=True)
+        regime_map.to_csv(map_save_path, index=False)
+        print(f"Regime map saved to {map_save_path}")
+
     # Add new column for the combination
-    df_regime['op_regime'] = df_regime.groupby(['alt_bin', 'mach_bin', 'tra_bin']).ngroup()
+    # df_regime['op_regime'] = df_regime.groupby(['alt_bin', 'mach_bin', 'tra_bin']).ngroup()
+    df_regime = df_regime.merge(regime_map, on=['alt_bin', 'mach_bin', 'tra_bin'], how='left')
     
     # Drop bin columns
     df_regime = df_regime.drop(columns=['alt_bin', 'mach_bin', 'tra_bin'])
     
     print(f"Identified {df_regime['op_regime'].nunique()} unique operating regimes.")
-    return df_regime
+    return df_regime, regime_map
 
 #regime wise mean and std dev calculation
 def save_regime_stats(df, output_path='regime_stats.csv'):
@@ -101,3 +114,29 @@ def add_remaining_useful_life(df, cap=125):
     df['target_rul'] = df['true_rul'].clip(upper=cap)
     
     return df
+
+#apply regime map for test and inference
+def apply_regime_map(df, regime_map_path, default_regime=0):
+    """
+    Uses a saved map to assign regimes to new data (Test or Inference).
+    """
+    df_regime = df.copy()
+    regime_map = pd.read_csv(regime_map_path)
+    
+    # Create identical bins
+    df_regime['alt_bin'] = df_regime['altitude'].round(-3)
+    df_regime['mach_bin'] = df_regime['mach_number'].round(1)
+    df_regime['tra_bin'] = df_regime['tra'].round()
+    
+    # Lookup existing regimes
+    df_regime = df_regime.merge(regime_map, on=['alt_bin', 'mach_bin', 'tra_bin'], how='left')
+    
+    # Handle unseen combinations
+    # If a combination didn't exist in training, merge results in a NaN
+    if df_regime['op_regime'].isnull().any():
+        unknown_count = df_regime['op_regime'].isnull().sum()
+        print(f"Warning: {unknown_count} rows had unknown regimes. Assigning to default: {default_regime}")
+        df_regime['op_regime'] = df_regime['op_regime'].fillna(default_regime).astype(int)
+    
+    df_regime = df_regime.drop(columns=['alt_bin', 'mach_bin', 'tra_bin'])
+    return df_regime
