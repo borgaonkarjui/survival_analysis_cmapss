@@ -3,6 +3,7 @@ from utils.DataLoading import load_cmapss_fd004
 from utils.DataPreprocessing import identify_operating_regimes, normalize_by_regime, add_remaining_useful_life, save_regime_stats, apply_regime_map
 from sklearn.model_selection import train_test_split
 import json
+import pandas as pd
 
 def split_data_by_engine(df, test_size=0.2, random_state=42):
     """
@@ -83,7 +84,7 @@ def preprocess_test_set(file_path=None, df=None, test_save_path=None,
     Complete data processing pipeline to process raw FD004 text file into a csv ready for training.
     Save metadata from train set.
     """
-    if not (file_path or df):
+    if not (file_path or isinstance(df, pd.DataFrame)):
         print("Please provide either filepath or dataframe.")
     else:
         if file_path:
