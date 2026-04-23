@@ -1,7 +1,7 @@
 import xgboost as xgb
 import pandas as pd
 import json
-from preprocess import preprocess_test_set
+from src.preprocess import preprocess_test_set
 from utils.DataLoading import load_cmapss_fd004
 
 class RULPredictor:
