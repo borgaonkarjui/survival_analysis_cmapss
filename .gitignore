@@ -208,3 +208,5 @@ __marimo__/
 
 #custom
 .DS_Store
+.zip
+*.sh
