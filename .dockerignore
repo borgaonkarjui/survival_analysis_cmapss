@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+
+# Python leftovers
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+
+# project folders and files
+My Collection.postman_collection.json
+data/raw/
+!data/raw/CMAPSSData/test_FD004.txt #setting exception
+data/processed/
+logs/
+models/cgboost/xgboost_v001.json
+notebooks/
+results/
+
+src/data_loader.py
+src/evaluate.py
+src/model_defination.py
+src/train.py
+
+utils/ExploratoryDataAnalysis.py
+utils/modelEvaluation.py
+utils/version_control.py
+
+# Mac junk and build artifacts
+.DS_Store
+* .egg-info
+
+# Setup Scripts
+install-openmp.sh
+*.sh
+
+# IDE
+.vscode/
+
+# UV specifics
+.uv
