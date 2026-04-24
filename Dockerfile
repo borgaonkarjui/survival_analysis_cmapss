@@ -17,17 +17,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml uv.lock ./
 
 # installing dependencies using uv
-RUN /uv/bin/uv sync --frozen --no-dev --system
+RUN /uv/bin/uv sync --frozen --no-dev --no-install-project
+
+# setting path variable
+ENV PATH="/workspace/.venv/bin:$PATH"
 
 # copying entire project
 COPY . .
-
-# setting pythonpath for the project
-ENV PYTHONPATH=/workspace
 
 # documentation : telling docker that the container is designed to listen on port 8080
 # using port 8080 for cloud run
 EXPOSE 8080
 
 # using uvicorn to spin up server to listen
-CMD ["uvicorn", "app.app:app", "--host", "0.0.0.0", "--port", "8080"]
+# CMD ["uvicorn", "app.app:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["python", "-m", "uvicorn", "app.app:app", "--host", "0.0.0.0", "--port", "8080"]
