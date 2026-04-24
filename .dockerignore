@@ -12,8 +12,21 @@ venv/
 
 # project folders and files
 My Collection.postman_collection.json
-data/raw/
-!data/raw/CMAPSSData/test_FD004.txt #setting exception
+data/raw/CMAPSSData.zip
+data/raw/CMAPSSData/Damage Propagation Modeling.pdf
+data/raw/CMAPSSData/readme.txt
+data/raw/CMAPSSData/RUL_FD001.txt
+data/raw/CMAPSSData/RUL_FD002.txt
+data/raw/CMAPSSData/RUL_FD003.txt
+data/raw/CMAPSSData/RUL_FD004.txt
+data/raw/CMAPSSData/test_FD001.txt
+data/raw/CMAPSSData/test_FD002.txt
+data/raw/CMAPSSData/test_FD003.txt
+data/raw/CMAPSSData/train_FD001.txt
+data/raw/CMAPSSData/train_FD002.txt
+data/raw/CMAPSSData/train_FD003.txt
+data/raw/CMAPSSData/train_FD004.txt
+
 data/processed/
 logs/
 models/cgboost/xgboost_v001.json
@@ -25,7 +38,6 @@ src/evaluate.py
 src/model_defination.py
 src/train.py
 
-utils/ExploratoryDataAnalysis.py
 utils/modelEvaluation.py
 utils/version_control.py
 
